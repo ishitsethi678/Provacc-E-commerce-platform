@@ -1,13 +1,15 @@
-require("dotenv").config();
 const express = require("express");
 const app = express();
-// const port = 3000;
+require("dotenv").config(); //env file
+require("./mongoConnection"); // Database connection
+app.use(express.json());
+
+app.use(require(`./routes/auth`));
 
 app.get("/", (req, res) => {
   res.send("hello world");
 });
 
-console.log("hiii this is ishit");
-app.listen(process.env.PORT || 5000, () => {
-  console.log(`Provacc running on ${process.env.PORT || 5000}`);
+app.listen(process.env.PORT, () => {
+  console.log(`Provacc running on ${process.env.PORT}`);
 });
