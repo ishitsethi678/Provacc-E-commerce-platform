@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcrypt");
 const User = require("../models/userSchema");
 
+//-------Register Api------
 router.post("/register", async (req, res) => {
   const { name, email, phone, password, cpassword } = req.body;
   try {
@@ -14,12 +16,20 @@ router.post("/register", async (req, res) => {
         error: "password and confirmpassword should be the same",
       });
     }
+    const hashPassword = await bcrypt.hash(password, 10);
+
     //checking for email and phone
     const existingUser = await User.find({ email: email, phone: phone });
     if (existingUser.length > 0) {
       return res.status(400).json({ error: "user already exists" });
     }
-    let user = new User({ name, email, phone, password, cpassword });
+    let user = new User({
+      name,
+      email,
+      phone,
+      password: hashPassword,
+      cpassword: hashPassword,
+    });
     user.save();
     if (user) {
       res.send("user got saved");
@@ -27,6 +37,33 @@ router.post("/register", async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(422).json({ error: "there was an error" });
+  }
+});
+
+//-----Login Api------
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    if (!email || !password) {
+      return res.status(422).json({ error: "Please enter all details" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(422).json({ error: "User not found" });
+    }
+
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch) {
+      return res.status(422).json({ error: "Invalid password" });
+    }
+
+    // If everything is correct, return success message
+    res.status(200).json({ message: "Logged in successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
